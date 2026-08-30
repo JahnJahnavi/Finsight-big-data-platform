@@ -317,7 +317,9 @@ services:
   # Spark standalone master. Profile: spark
   # ---------------------------------------------------------------------------
   spark-master:
-    image: apache/spark:3.5.3
+    build:
+      context: ./docker/spark
+    image: finsight/spark:3.5.3
     container_name: finsight-spark-master
     hostname: spark-master
     restart: unless-stopped
@@ -341,6 +343,7 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - ./data:/opt/finsight/data:ro
       - spark-ivy:/opt/spark/.ivy2      # cache for spark-submit --packages
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
@@ -355,7 +358,9 @@ services:
   # Spark standalone worker. Profile: spark
   # ---------------------------------------------------------------------------
   spark-worker:
-    image: apache/spark:3.5.3
+    build:
+      context: ./docker/spark
+    image: finsight/spark:3.5.3
     container_name: finsight-spark-worker
     hostname: spark-worker
     restart: unless-stopped
@@ -370,7 +375,7 @@ services:
       - "--memory"
       - "${SPARK_WORKER_MEMORY:-1200M}"
       - "--cores"
-      - "${SPARK_WORKER_CORES:-2}"
+      - "${SPARK_WORKER_CORES:-4}"
     environment:
       SPARK_NO_DAEMONIZE: "true"
     ports:
@@ -381,6 +386,7 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - ./data:/opt/finsight/data:ro
       - spark-ivy:/opt/spark/.ivy2
     depends_on:
       spark-master:

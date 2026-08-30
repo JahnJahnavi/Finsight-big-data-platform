@@ -17,14 +17,14 @@ executive Power BI dashboards.
 | **2** | Kafka topics + Python producer (`txn-raw` ingestion) — see [`kafka/README.md`](kafka/README.md) | ✅ implemented |
 | **3** | Kafka `txn-raw` → Kafka Connect HDFS sink → HDFS Parquet — see [`docs/phase-03-hdfs.md`](docs/phase-03-hdfs.md) | ✅ implemented |
 | **4** | Spark Structured Streaming **fraud detection** (`txn-raw` → `txn-flagged` + HDFS metrics) — see [`docs/phase-04-fraud-streaming.md`](docs/phase-04-fraud-streaming.md) | ✅ implemented |
-| 5 | Spark Structured Streaming churn detection | ⏳ not started |
-| 6 | Spark Core batch (risk scoring, CLV) | ⏳ |
+| **5** | Spark Structured Streaming **churn detection** (`txn-raw` → `txn-churn` + HDFS Parquet alerts) — see [`docs/phase-05-churn-streaming.md`](docs/phase-05-churn-streaming.md) | ✅ implemented |
+| 6 | Spark Core batch (risk scoring, CLV) | ⏳ not started |
 | 7 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ |
 | 8 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
 | 9 | Alteryx workflows | ⏳ |
 | 10 | Power BI dashboards | ⏳ |
 
-Churn, batch jobs, Hive SQL, Alteryx and Power BI artifacts are not implemented yet.
+Spark Core batch jobs, Hive SQL, Alteryx and Power BI artifacts are not implemented yet.
 
 ---
 
