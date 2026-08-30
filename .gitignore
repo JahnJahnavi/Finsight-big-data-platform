@@ -81,3 +81,11 @@ Thumbs.db
 # --- Logs -----------------------------------------------------------
 logs/
 *.log
+
+# --- Phase 2: Kafka ingestion -----------------------------------------
+# Generated sample transaction data (schema-accurate synthetic CSVs).
+data/sample/transactions_*.csv
+data/Transactions.csv
+# Dumps of consumed messages / offset snapshots.
+*.jsonl
+kafka/*.out
