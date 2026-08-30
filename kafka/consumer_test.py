@@ -27,7 +27,7 @@ from collections import Counter
 from confluent_kafka import Consumer, KafkaError
 
 from config import CONFIG, setup_logging
-from transaction_schema import REQUIRED_FIELDS, validate_record
+from transaction_schema import REQUIRED_FIELDS, unwrap, validate_record
 
 log = setup_logging("consumer_test")
 
@@ -103,7 +103,7 @@ def run(
                 if not first_problem:
                     first_problem.append(f"schema: {problems}")
             elif sample_record is None:
-                sample_record = record
+                sample_record = unwrap(record)
 
             if received >= expect:
                 break

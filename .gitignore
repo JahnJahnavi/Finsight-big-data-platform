@@ -89,3 +89,7 @@ data/Transactions.csv
 # Dumps of consumed messages / offset snapshots.
 *.jsonl
 kafka/*.out
+
+# --- Phase 3: Kafka Connect -> HDFS ----------------------------------
+# transient Spark read helper written by scripts/validate_phase3.py
+scripts/_p3_read.py

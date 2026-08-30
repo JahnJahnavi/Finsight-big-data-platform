@@ -11,6 +11,12 @@ The producer publishes each CSV row as a JSON object containing:
                    primary key); format ``TXN`` + 9-digit zero-padded sequence
   * ``ingest_ts``- UTC ISO-8601 timestamp set when the producer read the row
 
+By default the payload is wrapped in a Kafka Connect JSON *schema envelope*
+(``{"schema": ..., "payload": ...}``). This is required by the Phase 3 Kafka
+Connect HDFS sink: its ``ParquetFormat`` and ``FieldPartitioner`` both need a
+typed Connect ``Struct``, and there is no Schema Registry in the stack. Pass
+``--raw`` to the producer to emit the bare payload instead.
+
 No business logic (fraud / churn / enrichment) happens here - that belongs to
 later phases. This module only parses, types and validates.
 """
@@ -47,6 +53,53 @@ ALLOWED_TYPES = {"CASH_IN", "CASH_OUT", "DEBIT", "PAYMENT", "TRANSFER"}
 
 # Fields a consumer must find in every message for it to be considered valid.
 REQUIRED_FIELDS: tuple[str, ...] = CSV_COLUMNS + ("txnId", "ingest_ts")
+
+# --------------------------------------------------------------------------- #
+# Kafka Connect schema envelope
+# --------------------------------------------------------------------------- #
+# Connect JSON schema types: int32, int64, float, double, boolean, string, bytes
+_CONNECT_TYPE = {
+    "step": "int32",
+    "type": "string",
+    "amount": "double",
+    "nameOrig": "string",
+    "oldbalanceOrg": "double",
+    "newbalanceOrig": "double",
+    "nameDest": "string",
+    "oldbalanceDest": "double",
+    "newbalanceDest": "double",
+    "isFraud": "int32",
+    "isFlaggedFraud": "int32",
+    "txnId": "string",
+    "ingest_ts": "string",
+}
+
+# Field order is fixed and stable so the connector produces a consistent Parquet
+# schema across restarts.
+_FIELD_ORDER: tuple[str, ...] = CSV_COLUMNS + ("txnId", "ingest_ts")
+
+CONNECT_VALUE_SCHEMA: dict = {
+    "type": "struct",
+    "name": "finsight.transaction",
+    "version": 1,
+    "optional": False,
+    "fields": [
+        {"field": name, "type": _CONNECT_TYPE[name], "optional": False}
+        for name in _FIELD_ORDER
+    ],
+}
+
+
+def to_envelope(record: dict) -> dict:
+    """Wrap a payload dict in the Connect ``{"schema": ..., "payload": ...}`` form."""
+    return {"schema": CONNECT_VALUE_SCHEMA, "payload": record}
+
+
+def unwrap(value: dict) -> dict:
+    """Return the payload whether ``value`` is a bare record or an envelope."""
+    if isinstance(value, dict) and "schema" in value and "payload" in value:
+        return value["payload"]
+    return value
 
 
 class SchemaError(ValueError):
@@ -110,7 +163,9 @@ def validate_record(record: dict) -> list[str]:
     """Return a list of problems with a decoded message. Empty list == valid.
 
     Used by ``consumer_test.py`` to check messages coming back off the topic.
+    Accepts either a bare record or a Connect schema envelope.
     """
+    record = unwrap(record)
     problems: list[str] = []
 
     for field in REQUIRED_FIELDS:

@@ -1,0 +1,40 @@
+{
+  "name": "finsight-hdfs-sink-txn-raw",
+  "config": {
+    "connector.class": "io.confluent.connect.hdfs3.Hdfs3SinkConnector",
+    "tasks.max": "3",
+    "topics": "txn-raw",
+
+    "store.url": "hdfs://namenode:8020",
+    "hadoop.conf.dir": "/etc/hadoop/conf",
+    "confluent.topic.bootstrap.servers": "kafka:29092",
+    "confluent.topic.replication.factor": "1",
+
+    "format.class": "io.confluent.connect.hdfs3.parquet.ParquetFormat",
+    "parquet.codec": "snappy",
+
+    "partitioner.class": "io.confluent.connect.storage.partitioner.FieldPartitioner",
+    "partition.field.name": "step",
+
+    "topics.dir": "finsight/raw",
+    "logs.dir": "finsight/logs",
+
+    "flush.size": "2000",
+    "rotate.interval.ms": "-1",
+    "rotate.schedule.interval.ms": "300000",
+    "timezone": "UTC",
+
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "true",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+
+    "hive.integration": "false",
+    "schema.compatibility": "BACKWARD",
+
+    "errors.tolerance": "all",
+    "errors.log.enable": "true",
+    "errors.deadletterqueue.topic.name": "txn-raw-dlq",
+    "errors.deadletterqueue.topic.replication.factor": "1",
+    "errors.deadletterqueue.context.headers.enable": "true"
+  }
+}

@@ -78,6 +78,7 @@ python kafka/producer.py --file <csv> [options]
   --rate N                 target msg/sec; 0 = as fast as possible (default: 1000)
   --limit N                stop after N rows (testing)
   --report-every N         progress log cadence (default: 1000)
+  --raw                    emit bare JSON instead of the Connect schema envelope
   --log-level LEVEL        DEBUG/INFO/WARNING/ERROR
 ```
 
@@ -91,19 +92,27 @@ python kafka/producer.py --file <csv> [options]
 
 ### Message format
 
-Each `txn-raw` value is a JSON object: the 11 original CSV columns (typed) plus:
+The payload is the 11 original CSV columns (typed) plus:
 
 | Field | Source |
 |-------|--------|
 | `txnId` | derived — `TXN` + 9-digit zero-padded sequence (metadata lists txnId as a derived PK) |
 | `ingest_ts` | UTC ISO-8601, set when the producer reads the row |
 
+By **default** (Phase 3+) the payload is wrapped in a Kafka Connect JSON schema
+envelope so the HDFS sink can write typed Parquet:
+
 ```json
-{"type":"CASH_OUT","nameOrig":"C1958682846","nameDest":"C9963334018","step":1,
- "isFraud":0,"isFlaggedFraud":0,"amount":441.46,"oldbalanceOrg":147294.24,
- "newbalanceOrig":146852.78,"oldbalanceDest":21096.09,"newbalanceDest":21537.55,
- "txnId":"TXN000000001","ingest_ts":"2026-08-30T15:24:48.536685+00:00"}
+{"schema":{"type":"struct","name":"finsight.transaction","fields":[
+   {"field":"step","type":"int32","optional":false}, ... ]},
+ "payload":{"step":1,"type":"CASH_OUT","amount":441.46,"nameOrig":"C1958682846",
+   "oldbalanceOrg":147294.24,"newbalanceOrig":146852.78,"nameDest":"C9963334018",
+   "oldbalanceDest":21096.09,"newbalanceDest":21537.55,"isFraud":0,"isFlaggedFraud":0,
+   "txnId":"TXN000000001","ingest_ts":"2026-08-30T15:24:48.536685+00:00"}}
 ```
+
+`--raw` (or `PRODUCER_RAW=true`) emits just the `payload` object. `consumer_test.py`
+handles both. See `docs/phase-03-hdfs.md` for why.
 
 ## Validation
 

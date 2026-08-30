@@ -129,10 +129,14 @@ services:
       CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
       CONNECT_LOG4J_ROOT_LOGLEVEL: "WARN"
-      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+      # Parquet writing + the HDFS client + up to 168 open step-partitions per
+      # task need more heap than a plain Connect worker (see docs/phase-03-hdfs.md).
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx900m"
     volumes:
       - connect-data:/tmp/connect
       - ./docker/conf/hadoop:/etc/hadoop/conf:ro
+      # HDFS sink connector definition (applied via scripts/register_hdfs_sink.py)
+      - ./docker/kafka-connect/connectors:/finsight/connectors:ro
     depends_on:
       kafka:
         condition: service_healthy
@@ -142,7 +146,7 @@ services:
       timeout: 10s
       retries: 20
       start_period: 90s
-    mem_limit: 900m
+    mem_limit: 1400m
     networks: [finsight-net]
 
   # ---------------------------------------------------------------------------
