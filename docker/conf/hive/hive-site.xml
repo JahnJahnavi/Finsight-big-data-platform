@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  FinSight - Hive site configuration shared by the metastore, HiveServer2 and
+  the Spark containers (symlinked into $HIVE_HOME/conf via HIVE_CUSTOM_CONF_DIR,
+  and mounted into /opt/spark/conf).
+
+  It REPLACES the image's default hive-site.xml, so the execution-engine
+  settings from that default are reproduced here, plus the FinSight-specific
+  wiring (PostgreSQL metastore over Thrift, warehouse on HDFS).
+
+  Metastore DB credentials are injected at runtime via SERVICE_OPTS in
+  docker-compose.yml - no secrets live in this file.
+-->
+<configuration>
+
+  <!-- ================= FinSight wiring ================= -->
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://hive-metastore:9083</value>
+  </property>
+  <property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>hdfs://namenode:8020/user/hive/warehouse</value>
+  </property>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://namenode:8020</value>
+  </property>
+  <property>
+    <name>hive.server2.thrift.port</name>
+    <value>10000</value>
+  </property>
+  <property>
+    <name>hive.server2.webui.host</name>
+    <value>0.0.0.0</value>
+  </property>
+  <property>
+    <name>hive.server2.webui.port</name>
+    <value>10002</value>
+  </property>
+  <property>
+    <name>hive.server2.enable.doAs</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>metastore.storage.schema.reader.impl</name>
+    <value>org.apache.hadoop.hive.metastore.SerDeStorageSchemaReader</value>
+  </property>
+  <property>
+    <name>metastore.metastore.event.db.notification.api.auth</name>
+    <value>false</value>
+  </property>
+
+  <!-- ============ Local execution engine (from image default) ============ -->
+  <!-- Tez in local mode - no YARN cluster in this dev stack.
+       All heavy processing is done by Spark; HiveServer2 handles DDL and
+       light SELECTs for Alteryx / Power BI ODBC. -->
+  <property>
+    <name>hive.execution.engine</name>
+    <value>tez</value>
+  </property>
+  <property>
+    <name>tez.local.mode</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>tez.runtime.optimize.local.fetch</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hive.tez.exec.inplace.progress</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>hive.exec.submit.local.task.via.child</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>local</value>
+  </property>
+  <property>
+    <name>mapreduce.cluster.local.dir</name>
+    <value>/tmp/mapred/local</value>
+  </property>
+  <property>
+    <name>hive.exec.scratchdir</name>
+    <value>/tmp/hive/scratch</value>
+  </property>
+  <property>
+    <name>hive.exec.local.scratchdir</name>
+    <value>/tmp/hive/local</value>
+  </property>
+  <property>
+    <name>hive.user.install.directory</name>
+    <value>/tmp/hive/install</value>
+  </property>
+  <property>
+    <name>hive.tez.staging-dir</name>
+    <value>/tmp/hive/tez-staging</value>
+  </property>
+</configuration>
