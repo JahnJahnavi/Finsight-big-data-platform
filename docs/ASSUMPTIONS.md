@@ -37,6 +37,11 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | **I20** | `hist_freq_per_12` (S1 baseline) | Spec 7.2: "historical average is above 3 per 12 steps" — not defined how | `all_time_txn_count / ((max_step_in_history - customer_first_step + 1) / 12)`, from `bootstrap_customer_history.py`. Customers absent from the baseline cannot trigger S1/S2. | ADOPTED |
 | **I21** | Churn output-mode / dedup | Spec 7.2 R2 | `outputMode("update")` on the windowed aggregation — alerts emit in real time and a customer+window may be re-emitted as evidence accrues. `txn-churn` and `churn_alerts` consumers dedupe on `(customerId, window_end_step)`. | ADOPTED |
 | **I22** | Spark image | Not specified | `finsight/spark:3.5.3` = `apache/spark:3.5.3` + `pandas==1.5.3` + `pyarrow==12.0.1` (base ships neither; needed for Arrow APIs from Phase 6). pandas pinned < 2 because PySpark 3.5's `applyInPandasWithState` breaks on pandas 2.x. | ADOPTED |
+| **I23** | Risk factor: "average transfer amount" | Spec 7.3 factor 2 | Mean `amount` of the customer's **`type = 'TRANSFER'`** transactions (`0` if the customer makes none). | ADOPTED |
+| **I24** | Risk "transaction frequency" / "rolling 7-day" | Spec 7.3: "rolling 7-day composite risk score" | Computed over the **full** transaction history — which is a 7-day (168-step) dataset — so the "rolling 7-day" window == the whole history here. Frequency = the customer's transaction count. | ADOPTED |
+| **I25** | Risk input path | Spec 7.3: `/finsight/raw/transactions/` | Default `--input` is `/finsight/raw/txn-raw` (the actual Kafka Connect landing path, I5b); overridable. | ADOPTED |
+| **I26** | `daily_summary` format | Spec 7.3 R2 + 9.2 (Alteryx reads a "CSV export") | Parquet to `/finsight/processed/daily_summary/` **and** CSV to `/finsight/exports/daily_summary/`. Grouped by `type` and `step`; columns `transaction_volume`, `total_amount`, `fraud_count`. | ADOPTED |
+| **I27** | `risk_scores` columns | Spec 7.3: "one row per customerId with a normalised risk_score" + R1 tier column | Required `customerId`, `risk_score`, `risk_tier` **plus** the 4 raw + 4 normalised factor columns and `scored_at` (for Power BI drill-down). | ADOPTED |
 
 ---
 
@@ -50,8 +55,8 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | G3 | MongoDB | `mongoimport` command referenced but absent | `mongoimport --db finsight --collection customers --file … (--jsonArray if needed)` | 6 |
 | G4 | Neo4j | Cypher fraud-ring query referenced but absent | Implement from description: accounts with `> 3` distinct inbound senders | 6 |
 | G5 | Neo4j | `neo4j_loader.py` described as "provided" but not in the dataset | We implement it (neo4j Python driver, batched UNWIND) | 6 |
-| G6 | Spark Core | Risk scoring: "four weighted factors" — **weights not given** (unlike CLV) | Config-driven in `.env`; default 25% each; flagged for sign-off | 4 |
-| G7 | Spark Core | Risk score normalisation method unspecified | Min-max per factor across customers, then weighted sum | 4 |
+| G6 | Spark Core | Risk scoring: "four weighted factors" — **weights not given** (unlike CLV) | RESOLVED Phase 6: `.env` `RISK_W_*`, default **0.25 each**. **Needs owner sign-off.** | 6 ⚠️ |
+| G7 | Spark Core | Risk score normalisation method unspecified | RESOLVED Phase 6: **min-max per factor** across all customers, then weighted sum, clamped to [0,1]. | 6 ✓ |
 | G8 | Streaming | Churn "historical / all-time average" — cold start in a streaming job | Seed from a one-off batch over HDFS history (`bootstrap_customer_history.py`) | 3 |
 | G9 | Spark Core | CLV Recency: "inverse of steps since last txn, normalised" — formula ambiguous | `recency = clamp(1 - steps_since_last/48, 0, 1)`, 0 beyond 48 steps | 4 |
 | G14 | Power BI | Page 1 source = "txn-flagged Kafka topic" — Power BI cannot consume Kafka natively | Bridge consumer writes `txn-flagged` to a rolling file / push dataset | 8 |
