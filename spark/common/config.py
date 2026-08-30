@@ -92,6 +92,9 @@ class Paths:
     risk_scores: str = field(
         default_factory=lambda: _get("HDFS_RISK_SCORES", "/finsight/processed/risk_scores")
     )
+    clv_scores: str = field(
+        default_factory=lambda: _get("HDFS_CLV_SCORES", "/finsight/processed/clv_scores")
+    )
     daily_summary: str = field(
         default_factory=lambda: _get("HDFS_DAILY_SUMMARY", "/finsight/processed/daily_summary")
     )
@@ -184,6 +187,32 @@ class RiskScoring:
 
 
 @dataclass(frozen=True)
+class CLVScoring:
+    """Spec section 7.4 - Spark Core batch Customer Lifetime Value scoring.
+
+    CLV = 0.30*volume + 0.25*frequency + 0.25*diversity + 0.20*recency
+    Weights ARE given by the spec - do NOT change (override only for tuning).
+    """
+    app_name: str = field(default_factory=lambda: _get("SPARK_APPNAME_CLV",
+                                                       "finsight-batch-clv"))
+    w_volume: float = field(default_factory=lambda: _get_float("CLV_W_VOLUME", 0.30))
+    w_frequency: float = field(default_factory=lambda: _get_float("CLV_W_FREQUENCY", 0.25))
+    w_diversity: float = field(default_factory=lambda: _get_float("CLV_W_DIVERSITY", 0.25))
+    w_recency: float = field(default_factory=lambda: _get_float("CLV_W_RECENCY", 0.20))
+    # recency = 0 when steps-since-last-txn exceeds this (spec 7.4)
+    recency_zero_after_steps: int = field(
+        default_factory=lambda: _get_int("CLV_RECENCY_ZERO_AFTER_STEPS", 48))
+    n_txn_types: int = field(default_factory=lambda: _get_int("CLV_N_TXN_TYPES", 5))
+    # classification (spec 7.4)
+    tier_high_min: float = field(default_factory=lambda: _get_float("CLV_TIER_HIGH_MIN", 0.70))
+    tier_growth_min: float = field(
+        default_factory=lambda: _get_float("CLV_TIER_GROWTH_MIN", 0.40))
+
+    def weights(self) -> tuple[float, float, float, float]:
+        return (self.w_volume, self.w_frequency, self.w_diversity, self.w_recency)
+
+
+@dataclass(frozen=True)
 class StreamSettings:
     app_name_fraud: str = field(
         default_factory=lambda: _get("SPARK_APPNAME_FRAUD", "finsight-streaming-fraud")
@@ -207,4 +236,5 @@ PATHS = Paths()
 FRAUD = FraudRule()
 CHURN = ChurnRule()
 RISK = RiskScoring()
+CLV = CLVScoring()
 STREAM = StreamSettings()

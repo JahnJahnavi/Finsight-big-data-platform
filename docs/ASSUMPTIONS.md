@@ -42,6 +42,9 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | **I25** | Risk input path | Spec 7.3: `/finsight/raw/transactions/` | Default `--input` is `/finsight/raw/txn-raw` (the actual Kafka Connect landing path, I5b); overridable. | ADOPTED |
 | **I26** | `daily_summary` format | Spec 7.3 R2 + 9.2 (Alteryx reads a "CSV export") | Parquet to `/finsight/processed/daily_summary/` **and** CSV to `/finsight/exports/daily_summary/`. Grouped by `type` and `step`; columns `transaction_volume`, `total_amount`, `fraud_count`. | ADOPTED |
 | **I27** | `risk_scores` columns | Spec 7.3: "one row per customerId with a normalised risk_score" + R1 tier column | Required `customerId`, `risk_score`, `risk_tier` **plus** the 4 raw + 4 normalised factor columns and `scored_at` (for Power BI drill-down). | ADOPTED |
+| **I28** | CLV Recency formula | Spec 7.4: "inverse of the number of steps since the customer's last transaction, normalised … more recent scores higher … 0 if no activity in the last 48 steps" | Linear decay `recency = clamp(1 - steps_since_last / 48, 0, 1)` where `steps_since_last = max_step_overall - customer_last_step`. `0` steps since → `1.0`; `>= 48` → `0.0` (`ASSUMPTIONS.md` G9). | ADOPTED |
+| **I29** | CLV Product Diversity | Spec 7.4: "count of distinct transaction types used … divided by 5" | `countDistinct(type) / 5` over `{PAYMENT, TRANSFER, CASH_IN, DEBIT, CASH_OUT}`. | ADOPTED |
+| **I30** | CLV input path & `clv_scores` columns | Spec 7.4 | Input `/finsight/raw/txn-raw` (I25), overridable. Output required `customerId`, `clv_score`, `clv_classification` **plus** the 4 component scores + raw values + `scored_at`. Parquet, overwrite. **No Hive registration** (spec 7.4 R1) — deferred to the Hive phase. | ADOPTED |
 
 ---
 
