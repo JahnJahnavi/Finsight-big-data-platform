@@ -1,0 +1,10 @@
+# FinSight - Phase 2 (Kafka ingestion) Python dependencies.
+#
+# Kept phase-scoped so the ingestion scripts can be installed without the full
+# PySpark stack. These supersede the pins in the repo-root requirements.txt for
+# Python 3.12/3.13, which ship wheels only for confluent-kafka >= 2.6.
+#
+#     pip install -r kafka/requirements.txt
+
+confluent-kafka>=2.5,<3
+python-dotenv>=1.0,<2
