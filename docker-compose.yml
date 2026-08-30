@@ -34,6 +34,7 @@ volumes:
   neo4j-import:
   kafka-data:
   connect-data:
+  spark-ivy:
 
 services:
 
@@ -340,13 +341,14 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - spark-ivy:/opt/spark/.ivy2      # cache for spark-submit --packages
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
       interval: 15s
       timeout: 10s
       retries: 20
       start_period: 30s
-    mem_limit: 900m
+    mem_limit: 1200m
     networks: [finsight-net]
 
   # ---------------------------------------------------------------------------
@@ -379,6 +381,7 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - spark-ivy:/opt/spark/.ivy2
     depends_on:
       spark-master:
         condition: service_healthy

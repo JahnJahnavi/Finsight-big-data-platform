@@ -16,14 +16,15 @@ executive Power BI dashboards.
 | **1** | Development environment & infrastructure (Docker Compose stack) | ✅ implemented |
 | **2** | Kafka topics + Python producer (`txn-raw` ingestion) — see [`kafka/README.md`](kafka/README.md) | ✅ implemented |
 | **3** | Kafka `txn-raw` → Kafka Connect HDFS sink → HDFS Parquet — see [`docs/phase-03-hdfs.md`](docs/phase-03-hdfs.md) | ✅ implemented |
-| 4 | Spark Structured Streaming (fraud + churn) | ⏳ not started |
-| 5 | Spark Core batch (risk scoring, CLV) | ⏳ |
-| 6 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ |
-| 7 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
-| 8 | Alteryx workflows | ⏳ |
-| 9 | Power BI dashboards | ⏳ |
+| **4** | Spark Structured Streaming **fraud detection** (`txn-raw` → `txn-flagged` + HDFS metrics) — see [`docs/phase-04-fraud-streaming.md`](docs/phase-04-fraud-streaming.md) | ✅ implemented |
+| 5 | Spark Structured Streaming churn detection | ⏳ not started |
+| 6 | Spark Core batch (risk scoring, CLV) | ⏳ |
+| 7 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ |
+| 8 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
+| 9 | Alteryx workflows | ⏳ |
+| 10 | Power BI dashboards | ⏳ |
 
-No Spark jobs, Hive SQL, Alteryx or Power BI artifacts are implemented yet.
+Churn, batch jobs, Hive SQL, Alteryx and Power BI artifacts are not implemented yet.
 
 ---
 
