@@ -1,0 +1,33 @@
+# =============================================================================
+# FinSight - Python runtime dependencies
+# Target: Python 3.10 - 3.11  (PySpark 3.5.x does not yet support 3.12+)
+# Install:  python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
+# =============================================================================
+
+# --- Spark / big data ---------------------------------------------------
+pyspark==3.5.3
+py4j==0.10.9.7
+pyarrow==17.0.0
+pandas==2.2.3
+numpy==1.26.4
+
+# --- Kafka ------------------------------------------------------------
+confluent-kafka==2.5.3
+kafka-python==2.0.2
+
+# --- Databases -------------------------------------------------------
+pymongo==4.8.0
+neo4j==5.24.0
+
+# --- HDFS (WebHDFS client for validation / dir creation) --------------
+hdfs==2.7.3
+
+# --- Config / utilities --------------------------------------------
+python-dotenv==1.0.1
+requests==2.32.3
+tenacity==9.0.0
+pydantic==2.9.2
+jsonschema==4.23.0
+structlog==24.4.0
+rich==13.9.4
+click==8.1.7

@@ -1,0 +1,83 @@
+# =============================================================================
+# FinSight - .gitignore
+# =============================================================================
+
+# --- Secrets / environment ------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+
+# --- Source & generated data (never commit large datasets) ---------------
+data/raw/
+data/sample/*
+!data/sample/.gitkeep
+data/**/*.csv
+data/**/*.json
+data/**/*.parquet
+data/**/*.avro
+!data/schemas/*.json
+Bigdata Data set file/
+*.csv
+*.parquet
+*.avro
+# keep small fixtures used by tests
+!tests/**/*.csv
+!tests/**/*.json
+
+# --- Large binaries / reports -------------------------------------------
+*.pdf
+!docs/**/*.pdf
+!FinSight_Full_Specification_Complete.pdf
+*.pbix
+*.xlsx
+*.yxmd.bak
+alteryx/inputs/*
+alteryx/outputs/*
+!alteryx/**/.gitkeep
+
+# --- Downloaded JARs / connector artifacts -------------------------------
+*.jar
+docker/**/plugins/
+
+# --- Python -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Spark / Hadoop / Hive local artifacts ------------------------------
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+checkpoints/
+_spark_metadata/
+
+# --- Docker ------------------------------------------------------------
+docker/**/*.log
+
+# --- IDE / OS --------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# --- Logs -----------------------------------------------------------
+logs/
+*.log

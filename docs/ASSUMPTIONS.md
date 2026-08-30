@@ -1,0 +1,57 @@
+# FinSight — Assumptions Register
+
+The specification (`FinSight_Full_Specification_Complete.pdf`) is the source of
+truth. This file records **every decision made where the spec is silent,
+ambiguous, or self-contradictory**. Each entry has an ID so later phases and
+code comments can reference it (`# see ASSUMPTIONS.md A3`).
+
+Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect.
+
+---
+
+## Phase 1 — infrastructure
+
+| ID | Area | Spec says | Assumption adopted | Status |
+|----|------|-----------|--------------------|--------|
+| **I1** | Container images | Not specified | Official images pinned: Kafka `cp-kafka:7.5.0` (KRaft, no ZooKeeper), `apache/hadoop:3.3.6`, `apache/hive:3.1.3`, `apache/spark:3.5.3`, `mongo:7.0`, `neo4j:5.20-community`, `postgres:15-alpine`, `provectuslabs/kafka-ui:v0.7.2`. | ADOPTED |
+| **I2** | Hive version | Not specified | **Hive 3.1.3**, not 4.x. Spark 3.5's built-in Hive metastore client supports metastore versions only up to 3.1.x — a Hive 4.0.1 metastore was verified to fail Spark SQL with `Invalid method name: 'get_table'`. Hive 3.1.3 metastore + Spark 3.5 built-in (2.3.9) client is the supported, no-download combination. Hive 3.1.3 runs Tez in local mode (no YARN). | ADOPTED |
+| **I2b** | Hive metastore backend | Not specified | PostgreSQL (not embedded Derby) so Spark, HiveServer2 and the metastore can share it concurrently. JDBC driver added via `docker/hive/Dockerfile`. | ADOPTED |
+| **I3** | Spark deployment | "same Spark cluster" (7.4 R2) | Spark **standalone** master+worker (not YARN, not k8s) — lowest footprint that still gives a real cluster + Spark UI per app. | ADOPTED |
+| **I4** | Kafka Connect distribution | "Kafka Connect HDFS Sink Connector" (6.3) | Confluent Community `kafka-connect-hdfs3` v1.1.x, installed at image build. Licensed under the Confluent Community License (allowed for this use). | ADOPTED |
+| **I5** | HDFS partitioning | 5.1 "Parquet / day" vs 6.3 "partitioned by the step field" | Follow 6.3 (more specific & downstream jobs key on `step`): partition by `step`. Revisit in Phase 2. | ADOPTED |
+| **I6** | HDFS replication | Not specified | `dfs.replication=1` (single DataNode dev cluster). | ADOPTED |
+| **I7** | Security | Not specified | Dev mode: no Kerberos, HDFS permission checks disabled, plaintext Kafka, no TLS, HiveServer2 `doAs=false`. **Not production-safe** — documented for the capstone demo only. | ADOPTED |
+| **I8** | Ports | Not specified | Host ports per `README.md`. Chosen to avoid common clashes; Spark master UI keeps 8080, Kafka UI moved to 8085. All overridable in `.env`. | ADOPTED |
+| **I9** | Memory | Not specified | Per-service `mem_limit` + small JVM heaps tuned for a 12 GB Docker allocation. Compose **profiles** (`tools/connect/hive/spark`) allow partial startup below that. | ADOPTED |
+| **I10** | Alteryx / Power BI | Required technologies | Cannot be containerised (Windows-only, licensed desktop). Run on the host in Phases 7–8. A PySpark/pandas fallback for each Alteryx workflow will live in `alteryx/fallback/` so the pipeline is runnable headless. | ADOPTED |
+| **I11** | `.env` `SIM_EPOCH` | Data has only relative `step` (1 = 1 hour), no timestamp | Assume `step 1 == 2023-01-01T00:00:00Z`; `event_ts = SIM_EPOCH + (step-1) hours`. Needed for churn window bounds and Power BI date axes. | OPEN |
+| **I12** | Kafka topic auto-create | Not specified | Disabled (`KAFKA_AUTO_CREATE_TOPICS_ENABLE=false`). Topics are created explicitly in Phase 2 with the partition counts from spec 6.1 / 7.2. | ADOPTED |
+
+---
+
+## Carried forward from the specification analysis (to resolve in later phases)
+
+| ID | Area | Gap | Planned resolution | Phase |
+|----|------|-----|--------------------|-------|
+| G1 | Hive | DDL for `finsight.transactions` referenced ("below") but absent from the PDF | Derive from the 11-column CSV schema + derived `txnId`, `event_ts`; external table partitioned by `step` | 6 |
+| G2 | HDFS | Landing directory structure referenced ("below") but absent | Use `/finsight/raw/transactions/` (the path spec 7.3 reads from) | 2 |
+| G3 | MongoDB | `mongoimport` command referenced but absent | `mongoimport --db finsight --collection customers --file … (--jsonArray if needed)` | 6 |
+| G4 | Neo4j | Cypher fraud-ring query referenced but absent | Implement from description: accounts with `> 3` distinct inbound senders | 6 |
+| G5 | Neo4j | `neo4j_loader.py` described as "provided" but not in the dataset | We implement it (neo4j Python driver, batched UNWIND) | 6 |
+| G6 | Spark Core | Risk scoring: "four weighted factors" — **weights not given** (unlike CLV) | Config-driven in `.env`; default 25% each; flagged for sign-off | 4 |
+| G7 | Spark Core | Risk score normalisation method unspecified | Min-max per factor across customers, then weighted sum | 4 |
+| G8 | Streaming | Churn "historical / all-time average" — cold start in a streaming job | Seed from a one-off batch over HDFS history (`bootstrap_customer_history.py`) | 3 |
+| G9 | Spark Core | CLV Recency: "inverse of steps since last txn, normalised" — formula ambiguous | `recency = clamp(1 - steps_since_last/48, 0, 1)`, 0 beyond 48 steps | 4 |
+| G14 | Power BI | Page 1 source = "txn-flagged Kafka topic" — Power BI cannot consume Kafka natively | Bridge consumer writes `txn-flagged` to a rolling file / push dataset | 8 |
+| G15 | MongoDB | "expected distribution" for segment validation not numerically given | Validate: 5 segments present, counts sum to 10,000 | 6 |
+| G16 | Alteryx | Composite-risk formula differs from `composite_risk_score` already in the customer JSON | Keep as separate fields: `alteryx_composite_risk` vs `profile_composite_risk` | 7 |
+
+---
+
+## Source data
+
+The primary datasets (`NovaCrest_Transactions.csv`, `noveacrest_customers.json`,
+the 4 Neo4j CSVs, `neo4j_loader.py`) are **not yet in the repo** — only the
+metadata reference (`Bigdata Data set file/NOVACR_1.TXT`) and the spec PDF.
+Confirmed schemas are recorded in the Phase 0 analysis. Data acquisition
+(real files vs. synthetic generator) is an open decision for Phase 2.
