@@ -20,12 +20,13 @@ executive Power BI dashboards.
 | **5** | Spark Structured Streaming **churn detection** (`txn-raw` → `txn-churn` + HDFS Parquet alerts) — see [`docs/phase-05-churn-streaming.md`](docs/phase-05-churn-streaming.md) | ✅ implemented |
 | **6** | Spark Core **customer risk scoring** (`/finsight/raw/txn-raw` → `risk_scores` + `daily_summary`) — see [`docs/phase-06-risk-scoring.md`](docs/phase-06-risk-scoring.md) | ✅ implemented |
 | **7** | Spark Core **CLV scoring** (`/finsight/raw/txn-raw` → `clv_scores`) — see [`docs/phase-07-clv-scoring.md`](docs/phase-07-clv-scoring.md) | ✅ implemented |
-| 8 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ not started |
-| 9 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
-| 10 | Alteryx workflows | ⏳ |
-| 11 | Power BI dashboards | ⏳ |
+| **8** | **Hive data warehouse** — `finsight` db: `transactions` (external), `vw_fraud_transactions`, `txn_summary_mart` (managed), `customer_clv` — see [`docs/phase-08-hive.md`](docs/phase-08-hive.md) | ✅ implemented |
+| 9 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ not started |
+| 10 | MongoDB import, Neo4j loader | ⏳ |
+| 11 | Alteryx workflows | ⏳ |
+| 12 | Power BI dashboards | ⏳ |
 
-Spark SQL, Hive SQL, Alteryx and Power BI artifacts are not implemented yet.
+Spark SQL, MongoDB, Neo4j, Alteryx and Power BI artifacts are not implemented yet.
 
 ---
 

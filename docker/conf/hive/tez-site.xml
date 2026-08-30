@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  FinSight - Tez configuration for HiveServer2.
+
+  There is no YARN cluster in this dev stack, so Tez runs in LOCAL mode
+  (in-process). These settings must be in tez-site.xml (Tez does not read
+  hive-site.xml) and keep staging on the LOCAL filesystem, otherwise Tez
+  tries to reach a ResourceManager and fails with
+  "Wrong FS: hdfs://.../_tez_session_dir, expected: file:///".
+-->
+<configuration>
+  <property>
+    <name>tez.local.mode</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>tez.local.mode.without.network</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>tez.runtime.optimize.local.fetch</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>tez.staging-dir</name>
+    <value>file:///tmp/tez/staging</value>
+  </property>
+  <property>
+    <name>tez.ignore.lib.uris</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>tez.use.cluster.hadoop-libs</name>
+    <value>false</value>
+  </property>
+  <property>
+    <name>tez.am.resource.memory.mb</name>
+    <value>512</value>
+  </property>
+  <property>
+    <name>tez.task.resource.memory.mb</name>
+    <value>512</value>
+  </property>
+</configuration>

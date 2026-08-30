@@ -52,10 +52,11 @@
     <value>false</value>
   </property>
 
-  <!-- ============ Local execution engine (from image default) ============ -->
-  <!-- Tez in local mode - no YARN cluster in this dev stack.
-       All heavy processing is done by Spark; HiveServer2 handles DDL and
-       light SELECTs for Alteryx / Power BI ODBC. -->
+  <!-- ============ Local execution engine ============ -->
+  <!-- Tez in local mode - no YARN cluster in this dev stack. (The `mr` engine
+       is broken in this image: NoClassDefFound org/apache/hadoop/metrics/Updater
+       under LocalJobRunner.) All heavy processing is done by Spark (spec 8.1);
+       HiveServer2 runs the DDL, INSERT OVERWRITE and light SELECTs. -->
   <property>
     <name>hive.execution.engine</name>
     <value>tez</value>
@@ -80,13 +81,36 @@
     <name>mapreduce.framework.name</name>
     <value>local</value>
   </property>
+  <!-- External tables over Kafka-Connect output read step=<N>/ sub-directories -->
+  <property>
+    <name>hive.mapred.supports.subdirectories</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>mapreduce.input.fileinputformat.input.dir.recursive</name>
+    <value>true</value>
+  </property>
+  <!-- COUNT(*) via stale/absent Parquet stats NPEs on Hive 3.1.3 -->
+  <property>
+    <name>hive.compute.query.using.stats</name>
+    <value>false</value>
+  </property>
+  <!-- Hive 3.1.3 SemanticAnalyzer.checkResultsCache() NPEs on every SELECT when
+       the results-cache dir is not set up (HIVE-22099); off for this dev stack. -->
+  <property>
+    <name>hive.query.results.cache.enabled</name>
+    <value>false</value>
+  </property>
   <property>
     <name>mapreduce.cluster.local.dir</name>
     <value>/tmp/mapred/local</value>
   </property>
+  <!-- Tez local mode wants EVERYTHING on file:// - the _tez_session_dir is
+       derived from hive.exec.scratchdir, which would otherwise be qualified
+       against fs.defaultFS (hdfs://) and break LocalClient. -->
   <property>
     <name>hive.exec.scratchdir</name>
-    <value>/tmp/hive/scratch</value>
+    <value>file:///tmp/hive/scratch</value>
   </property>
   <property>
     <name>hive.exec.local.scratchdir</name>
@@ -94,10 +118,14 @@
   </property>
   <property>
     <name>hive.user.install.directory</name>
-    <value>/tmp/hive/install</value>
+    <value>file:///tmp/hive/install</value>
   </property>
   <property>
     <name>hive.tez.staging-dir</name>
-    <value>/tmp/hive/tez-staging</value>
+    <value>file:///tmp/hive/tez-staging</value>
+  </property>
+  <property>
+    <name>hive.metastore.warehouse.external.dir</name>
+    <value>hdfs://namenode:8020/user/hive/warehouse</value>
   </property>
 </configuration>
