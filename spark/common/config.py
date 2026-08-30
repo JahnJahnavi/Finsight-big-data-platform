@@ -89,6 +89,15 @@ class Paths:
     raw_txn: str = field(
         default_factory=lambda: _get("HDFS_RAW_TXN", "/finsight/raw/txn-raw")
     )
+    risk_scores: str = field(
+        default_factory=lambda: _get("HDFS_RISK_SCORES", "/finsight/processed/risk_scores")
+    )
+    daily_summary: str = field(
+        default_factory=lambda: _get("HDFS_DAILY_SUMMARY", "/finsight/processed/daily_summary")
+    )
+    exports: str = field(
+        default_factory=lambda: _get("HDFS_EXPORTS", "/finsight/exports")
+    )
     hdfs_namenode: str = field(
         default_factory=lambda: _get("HDFS_NAMENODE_INTERNAL", "hdfs://namenode:8020")
     )
@@ -145,6 +154,36 @@ class ChurnRule:
 
 
 @dataclass(frozen=True)
+class RiskScoring:
+    """Spec section 7.3 - Spark Core batch risk scoring.
+
+    Composite risk score from four factors (spec names them but does NOT give
+    weights - see docs/ASSUMPTIONS.md G6). Each raw factor is min-max normalised
+    to 0-1 across all customers, then combined as a weighted sum.
+    """
+    sim_epoch: str = field(default_factory=lambda: _get("SIM_EPOCH", "2023-01-01T00:00:00Z"))
+    app_name: str = field(default_factory=lambda: _get("SPARK_APPNAME_RISK",
+                                                       "finsight-batch-risk"))
+    # weights (default: equal 0.25 - ASSUMPTIONS G6, needs sign-off)
+    w_frequency: float = field(default_factory=lambda: _get_float("RISK_W_FREQUENCY", 0.25))
+    w_avg_transfer: float = field(
+        default_factory=lambda: _get_float("RISK_W_AVG_TRANSFER", 0.25))
+    w_cashout_prop: float = field(
+        default_factory=lambda: _get_float("RISK_W_CASHOUT_PROP", 0.25))
+    w_unique_dest: float = field(
+        default_factory=lambda: _get_float("RISK_W_UNIQUE_DEST", 0.25))
+    # tiers (spec 7.3 R1)
+    tier_low_max: float = field(
+        default_factory=lambda: _get_float("RISK_TIER_LOW_MAX", 0.25))
+    tier_medium_max: float = field(
+        default_factory=lambda: _get_float("RISK_TIER_MEDIUM_MAX", 0.60))
+
+    def weights(self) -> tuple[float, float, float, float]:
+        return (self.w_frequency, self.w_avg_transfer,
+                self.w_cashout_prop, self.w_unique_dest)
+
+
+@dataclass(frozen=True)
 class StreamSettings:
     app_name_fraud: str = field(
         default_factory=lambda: _get("SPARK_APPNAME_FRAUD", "finsight-streaming-fraud")
@@ -167,4 +206,5 @@ KAFKA = KafkaSettings()
 PATHS = Paths()
 FRAUD = FraudRule()
 CHURN = ChurnRule()
+RISK = RiskScoring()
 STREAM = StreamSettings()
