@@ -31,6 +31,12 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | **I14** | Fraud rule condition 3 | Spec 7.1: "destination post-transaction balance is zero" / `newbalanceDest == 0` | Literal float equality against `0.0` (Spark SQL `newbalanceDest = 0.0`). The account-emptying pattern produces an exact `0.0`; no epsilon tolerance. Rule kept in one place: `spark/streaming/fraud_rule.py`. | ADOPTED |
 | **I15** | `streaming_metrics` format | Spec 7.1 R2: "write this summary … for monitoring" — no format given | JSON, appended one file per micro-batch: `{batch_id, batch_ts, total_count, flagged_count, fraud_rate_pct, app_name, fraud_rule}`. Readable via `hdfs dfs -cat` and by Spark/Hive. | ADOPTED |
 | **I16** | `txn-flagged` message format | Spec 7.1: "written to the `txn-flagged` topic" — no format given | Bare JSON: the 13 transaction fields + `fraud_rule` + `detected_at` (detection timestamp). Key = `nameOrig`. | ADOPTED |
+| **I17** | Churn window slide | Spec 7.2: "24-step sliding window" — slide not given | 24-step window, **12-step slide** (`CHURN_SLIDE_STEPS`). Each txn contributes to 2 overlapping windows; a churning customer gets one alert per window. | ADOPTED |
+| **I18** | Churn S3 "exclusively CASH_OUT" | Spec 7.2 signal 3 | Every transaction in the window is `CASH_OUT` (`cashout_count == w_count`) **and** no `PAYMENT`/`DEBIT`. | ADOPTED |
+| **I19** | Churn S4 balance threshold / "consecutive" | Spec 7.2 signal 4: "reaches zero or below 500 for two or more consecutive transactions" | `newbalanceOrig < 500` (zero included); "consecutive" evaluated in `(step, kafka_offset)` order within the window; run length >= 2. | ADOPTED |
+| **I20** | `hist_freq_per_12` (S1 baseline) | Spec 7.2: "historical average is above 3 per 12 steps" — not defined how | `all_time_txn_count / ((max_step_in_history - customer_first_step + 1) / 12)`, from `bootstrap_customer_history.py`. Customers absent from the baseline cannot trigger S1/S2. | ADOPTED |
+| **I21** | Churn output-mode / dedup | Spec 7.2 R2 | `outputMode("update")` on the windowed aggregation — alerts emit in real time and a customer+window may be re-emitted as evidence accrues. `txn-churn` and `churn_alerts` consumers dedupe on `(customerId, window_end_step)`. | ADOPTED |
+| **I22** | Spark image | Not specified | `finsight/spark:3.5.3` = `apache/spark:3.5.3` + `pandas==1.5.3` + `pyarrow==12.0.1` (base ships neither; needed for Arrow APIs from Phase 6). pandas pinned < 2 because PySpark 3.5's `applyInPandasWithState` breaks on pandas 2.x. | ADOPTED |
 
 ---
 

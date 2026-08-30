@@ -39,6 +39,13 @@ def _get_float(name: str, default: float) -> float:
         return default
 
 
+def _get_int(name: str, default: int) -> int:
+    try:
+        return int(float(_get(name, str(default))))
+    except ValueError:
+        return default
+
+
 @dataclass(frozen=True)
 class KafkaSettings:
     # Spark jobs run inside the Compose network -> use the internal listener.
@@ -72,6 +79,16 @@ class Paths:
         default_factory=lambda: _get("HDFS_STREAMING_METRICS",
                                      "/finsight/processed/streaming_metrics")
     )
+    churn_alerts: str = field(
+        default_factory=lambda: _get("HDFS_CHURN_ALERTS", "/finsight/processed/churn_alerts")
+    )
+    customer_baseline: str = field(
+        default_factory=lambda: _get("HDFS_CUSTOMER_BASELINE",
+                                     "/finsight/processed/customer_baseline")
+    )
+    raw_txn: str = field(
+        default_factory=lambda: _get("HDFS_RAW_TXN", "/finsight/raw/txn-raw")
+    )
     hdfs_namenode: str = field(
         default_factory=lambda: _get("HDFS_NAMENODE_INTERNAL", "hdfs://namenode:8020")
     )
@@ -99,9 +116,41 @@ class FraudRule:
 
 
 @dataclass(frozen=True)
+class ChurnRule:
+    """Frozen from FinSight_Full_Specification_Complete.pdf section 7.2.
+
+    A customer is flagged when >= 2 of these are observed within a 24-step
+    (24-hour) sliding window. Do NOT change these values - see
+    docs/ASSUMPTIONS.md and spark/streaming/churn_rule.py.
+    """
+    # step 1 == this instant; event_ts = SIM_EPOCH + (step-1) hours (ASSUMPTIONS I11)
+    sim_epoch: str = field(default_factory=lambda: _get("SIM_EPOCH", "2023-01-01T00:00:00Z"))
+    window_steps: int = field(default_factory=lambda: _get_int("CHURN_WINDOW_STEPS", 24))
+    slide_steps: int = field(default_factory=lambda: _get_int("CHURN_SLIDE_STEPS", 12))
+    min_signals: int = field(default_factory=lambda: _get_int("CHURN_MIN_SIGNALS", 2))
+
+    # signal 1: freq < 1 per 12 steps AND historical avg > 3 per 12 steps
+    freq_low_per_12: float = field(
+        default_factory=lambda: _get_float("CHURN_FREQ_LOW_PER_12", 1.0))
+    freq_hist_per_12: float = field(
+        default_factory=lambda: _get_float("CHURN_FREQ_HIST_PER_12", 3.0))
+    # signal 2: window avg amount < this fraction of all-time avg
+    amount_drop_fraction: float = field(
+        default_factory=lambda: _get_float("CHURN_AMOUNT_DROP_FRACTION", 0.20))
+    # signal 4: newbalanceOrig below this for >= N consecutive txns
+    balance_low_threshold: float = field(
+        default_factory=lambda: _get_float("CHURN_BALANCE_LOW_THRESHOLD", 500.0))
+    balance_low_consecutive: int = field(
+        default_factory=lambda: _get_int("CHURN_BALANCE_LOW_CONSECUTIVE", 2))
+
+
+@dataclass(frozen=True)
 class StreamSettings:
     app_name_fraud: str = field(
         default_factory=lambda: _get("SPARK_APPNAME_FRAUD", "finsight-streaming-fraud")
+    )
+    app_name_churn: str = field(
+        default_factory=lambda: _get("SPARK_APPNAME_CHURN", "finsight-streaming-churn")
     )
     master: str = field(default_factory=lambda: _get("SPARK_MASTER_URL_INTERNAL",
                                                      "spark://spark-master:7077"))
@@ -117,4 +166,5 @@ class StreamSettings:
 KAFKA = KafkaSettings()
 PATHS = Paths()
 FRAUD = FraudRule()
+CHURN = ChurnRule()
 STREAM = StreamSettings()
