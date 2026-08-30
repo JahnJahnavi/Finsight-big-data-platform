@@ -13,17 +13,17 @@ executive Power BI dashboards.
 
 | Phase | Scope | Status |
 |------:|-------|--------|
-| **1** | **Development environment & infrastructure (this deliverable)** | ✅ implemented |
-| 2 | Kafka topics, Python producer, Kafka Connect → HDFS Parquet landing | ⏳ not started |
-| 3 | Spark Structured Streaming (fraud + churn) | ⏳ |
-| 4 | Spark Core batch (risk scoring, CLV) | ⏳ |
-| 5 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ |
-| 6 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
-| 7 | Alteryx workflows | ⏳ |
-| 8 | Power BI dashboards | ⏳ |
+| **1** | Development environment & infrastructure (Docker Compose stack) | ✅ implemented |
+| **2** | Kafka topics + Python producer (`txn-raw` ingestion) — see [`kafka/README.md`](kafka/README.md) | ✅ implemented |
+| **3** | Kafka `txn-raw` → Kafka Connect HDFS sink → HDFS Parquet — see [`docs/phase-03-hdfs.md`](docs/phase-03-hdfs.md) | ✅ implemented |
+| 4 | Spark Structured Streaming (fraud + churn) | ⏳ not started |
+| 5 | Spark Core batch (risk scoring, CLV) | ⏳ |
+| 6 | Spark SQL jobs (compliance / customer summary / dormancy) | ⏳ |
+| 7 | Hive DDL, MongoDB import, Neo4j loader | ⏳ |
+| 8 | Alteryx workflows | ⏳ |
+| 9 | Power BI dashboards | ⏳ |
 
-**Phase 1 delivers infrastructure only.** No producer, Spark jobs, Hive SQL,
-Alteryx or Power BI artifacts are implemented yet.
+No Spark jobs, Hive SQL, Alteryx or Power BI artifacts are implemented yet.
 
 ---
 

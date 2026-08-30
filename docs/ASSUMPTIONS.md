@@ -26,6 +26,8 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | **I10** | Alteryx / Power BI | Required technologies | Cannot be containerised (Windows-only, licensed desktop). Run on the host in Phases 7–8. A PySpark/pandas fallback for each Alteryx workflow will live in `alteryx/fallback/` so the pipeline is runnable headless. | ADOPTED |
 | **I11** | `.env` `SIM_EPOCH` | Data has only relative `step` (1 = 1 hour), no timestamp | Assume `step 1 == 2023-01-01T00:00:00Z`; `event_ts = SIM_EPOCH + (step-1) hours`. Needed for churn window bounds and Power BI date axes. | OPEN |
 | **I12** | Kafka topic auto-create | Not specified | Disabled (`KAFKA_AUTO_CREATE_TOPICS_ENABLE=false`). Topics are created explicitly in Phase 2 with the partition counts from spec 6.1 / 7.2. | ADOPTED |
+| **I13** | `txn-raw` message format | Spec 6.2 "serialized JSON message" | Producer wraps the payload in a Kafka Connect JSON **schema envelope** (`{"schema":...,"payload":...}`) by default — the HDFS sink's `ParquetFormat` + `FieldPartitioner` need a typed Connect `Struct` and there is no Schema Registry. `--raw` emits the bare payload; consumer/validator `unwrap()` both forms. Also adds derived `txnId` (`TXN`+9-digit) and `ingest_ts`. | ADOPTED |
+| **I5b** | HDFS raw path | Spec 7.3 / user Phase 3: `/finsight/raw/transactions/` | Kafka Connect's HDFS sink always appends `<topic>` as the last path segment and a topic-renaming `RegexRouter` crashes `Hdfs3SinkConnector` 1.1.26 (verified: NPE in `DataWriter.write`). Raw Parquet therefore lands at **`/finsight/raw/txn-raw/`** (`topics.dir=finsight/raw`). Downstream Hive/Spark target that path. Partitioning by `step` (I5) is unchanged. | ADOPTED |
 
 ---
 
@@ -34,7 +36,8 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | ID | Area | Gap | Planned resolution | Phase |
 |----|------|-----|--------------------|-------|
 | G1 | Hive | DDL for `finsight.transactions` referenced ("below") but absent from the PDF | Derive from the 11-column CSV schema + derived `txnId`, `event_ts`; external table partitioned by `step` | 6 |
-| G2 | HDFS | Landing directory structure referenced ("below") but absent | Use `/finsight/raw/transactions/` (the path spec 7.3 reads from) | 2 |
+| G2 | HDFS | Landing directory structure referenced ("below") but absent | RESOLVED in Phase 3: `/finsight/raw/txn-raw/step=<N>/*.parquet` (snappy). See I5b. Full layout in `scripts/init_hdfs.sh`. | 3 ✓ |
+| G13 | Kafka Connect | HDFS sink + Parquet needs a schema; Confluent connector licensing | RESOLVED in Phase 3: `kafka-connect-hdfs3` 1.1.26 (Confluent Community licence), `ParquetFormat` + `JsonConverter schemas.enable=true` fed by the producer's schema envelope (I13). No Schema Registry. | 3 ✓ |
 | G3 | MongoDB | `mongoimport` command referenced but absent | `mongoimport --db finsight --collection customers --file … (--jsonArray if needed)` | 6 |
 | G4 | Neo4j | Cypher fraud-ring query referenced but absent | Implement from description: accounts with `> 3` distinct inbound senders | 6 |
 | G5 | Neo4j | `neo4j_loader.py` described as "provided" but not in the dataset | We implement it (neo4j Python driver, batched UNWIND) | 6 |

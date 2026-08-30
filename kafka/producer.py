@@ -19,6 +19,10 @@ Examples
 Message key = ``nameOrig`` so every transaction from one account lands on the
 same partition - required by the per-customer stateful churn job in Phase 3.
 
+By default each value is a Kafka Connect JSON schema envelope
+(``{"schema": ..., "payload": ...}``) so the Phase 3 HDFS sink can write typed
+Parquet partitioned by ``step``. Use ``--raw`` for the bare payload.
+
 Exit codes: 0 = all delivered, 1 = completed with delivery/parse failures,
 2 = configuration / input error.
 """
@@ -27,6 +31,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import signal
 import sys
 import time
@@ -35,7 +40,7 @@ from pathlib import Path
 from confluent_kafka import KafkaException, Producer
 
 from config import CONFIG, setup_logging
-from transaction_schema import SchemaError, row_to_record
+from transaction_schema import SchemaError, row_to_record, to_envelope
 
 log = setup_logging("producer")
 
@@ -158,6 +163,7 @@ def produce_file(
     rate: float,
     limit: int | None,
     report_every: int,
+    raw: bool = False,
 ) -> int:
     if not file_path.is_file():
         log.error("input file not found: %s", file_path)
@@ -173,9 +179,10 @@ def produce_file(
     on_delivery = _delivery_report(stats)
 
     log.info(
-        "producing %s -> topic %r @ %s | rate=%s msg/s | limit=%s",
+        "producing %s -> topic %r @ %s | rate=%s msg/s | limit=%s | format=%s",
         file_path, topic, bootstrap_servers,
         rate or "unlimited", limit if limit is not None else "all",
+        "raw JSON" if raw else "Connect schema envelope",
     )
 
     try:
@@ -203,7 +210,9 @@ def produce_file(
                         log.warning("row %d skipped: %s", stats.read, exc)
                     continue
 
-                _produce_one(producer, topic, record, on_delivery, stats)
+                value = record if raw else to_envelope(record)
+                _produce_one(producer, topic, value, record["nameOrig"],
+                             on_delivery, stats)
                 producer.poll(0)
                 limiter.tick()
 
@@ -250,9 +259,9 @@ def _check_header(fieldnames) -> None:  # noqa: ANN001
         )
 
 
-def _produce_one(producer, topic, record, on_delivery, stats) -> None:  # noqa: ANN001
-    payload = json.dumps(record, separators=(",", ":")).encode("utf-8")
-    key = record["nameOrig"].encode("utf-8")
+def _produce_one(producer, topic, value, key_str, on_delivery, stats) -> None:  # noqa: ANN001
+    payload = json.dumps(value, separators=(",", ":")).encode("utf-8")
+    key = key_str.encode("utf-8")
     while True:
         try:
             producer.produce(topic, value=payload, key=key, on_delivery=on_delivery)
@@ -288,6 +297,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
                     help="stop after N rows (for testing)")
     ap.add_argument("--report-every", type=int, default=1000,
                     help="log a progress line every N rows (default: 1000)")
+    ap.add_argument("--raw", action="store_true",
+                    default=os.environ.get("PRODUCER_RAW", "").lower() in ("1", "true", "yes"),
+                    help="emit the bare JSON payload instead of the Connect "
+                         "schema envelope (env: PRODUCER_RAW)")
     ap.add_argument("--log-level", default=None,
                     help="override LOG_LEVEL (DEBUG/INFO/WARNING/ERROR)")
     return ap.parse_args(argv)
@@ -307,6 +320,7 @@ def main(argv: list[str] | None = None) -> int:
         rate=args.rate,
         limit=args.limit,
         report_every=args.report_every,
+        raw=args.raw,
     )
 
 
