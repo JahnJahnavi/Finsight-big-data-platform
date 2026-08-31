@@ -34,6 +34,9 @@ Bigdata Data set file/
 !FinSight_Full_Specification_Complete.pdf
 *.pbix
 *.xlsx
+# Power BI (Phase 13): generated import files + the locally-built report
+powerbi/exports/*
+!powerbi/exports/.gitkeep
 # Alteryx Designer artifacts - built locally from alteryx/workflows/*.md, never
 # committed (cannot be authored/verified without a Designer install - Phase 12).
 *.yxmd

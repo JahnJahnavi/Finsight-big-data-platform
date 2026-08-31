@@ -1,0 +1,121 @@
+// ===========================================================================
+// FinSight - Phase 13: Power BI DAX measures  (copy-paste into Power BI Desktop)
+//
+// Create a blank table `_Measures` (Enter Data) and add each measure to it, or
+// paste into the relevant fact table. Names match docs/powerbi/*.md.
+// Grouped by display folder.
+// ===========================================================================
+
+// ---- Folder: Fraud (Page 1) ----------------------------------------------
+
+Flagged Transactions =
+    DISTINCTCOUNT ( FlaggedTransactions[txnId] )
+
+Flagged Transaction Value =
+    SUM ( FlaggedTransactions[amount] )
+
+Confirmed Fraud (flagged) =
+    CALCULATE ( [Flagged Transactions], FlaggedTransactions[isFraud] = 1 )
+
+False Positives =
+    CALCULATE ( [Flagged Transactions], FlaggedTransactions[false_positive] = 1 )
+
+False Positive Rate % =
+    DIVIDE ( [False Positives], [Flagged Transactions] ) * 100
+
+Transactions Processed =
+    SUM ( StreamingMetrics[total_count] )
+
+Flagged (from metrics) =
+    SUM ( StreamingMetrics[flagged_count] )
+
+Fraud Rate % =
+    DIVIDE ( [Flagged (from metrics)], [Transactions Processed] ) * 100
+    // fallback when StreamingMetrics is empty:
+    // DIVIDE ( [Flagged Transactions], SUM ( TransactionSummary[transaction_count] ) ) * 100
+
+Daily Flagged Count =
+    CALCULATE ( [Flagged Transactions], VALUES ( DimDate[date] ) )
+
+// ---- Folder: Transactions (Page 3) -------------------------------------
+
+Total Transaction Volume =
+    SUM ( TransactionSummary[total_volume] )
+
+Transaction Count =
+    SUM ( TransactionSummary[transaction_count] )
+
+Summary Fraud Count =
+    SUM ( TransactionSummary[fraud_count] )
+
+Summary Fraud Rate % =
+    DIVIDE ( [Summary Fraud Count], [Transaction Count] ) * 100
+
+Avg Transaction Amount =
+    DIVIDE ( [Total Transaction Volume], [Transaction Count] )
+
+// Weekly trend: put DimDate[week_start] (or [iso_week]) on the axis with
+// [Summary Fraud Rate %].
+
+// ---- Folder: Customer (Page 2) ---------------------------------------
+
+Customers =
+    DISTINCTCOUNT ( DimCustomer[customerId] )
+
+Avg Risk Score =
+    AVERAGE ( DimCustomer[risk_score] )
+
+Avg Churn Probability =
+    AVERAGE ( DimCustomer[churn_probability] )
+
+High Churn Customers =
+    CALCULATE ( [Customers], DimCustomer[churn_band] = "High" )
+
+Churn Rate % =
+    DIVIDE ( [High Churn Customers], [Customers] ) * 100
+
+Avg CLV Score =
+    AVERAGE ( DimCustomer[clv_score] )
+
+High Value Customers =
+    CALCULATE ( [Customers], DimCustomer[clv_classification] = "High Value" )
+
+Customers Holding Product =
+    DISTINCTCOUNT ( CustomerProducts[customerId] )
+
+Product Holdings =
+    COUNTROWS ( CustomerProducts )
+
+Avg Products per Customer =
+    DIVIDE ( COUNTROWS ( CustomerProducts ), [Customers] )
+
+// ---- Folder: Compliance / Dormancy (Page 3) ------------------------
+
+Compliance Fraud Rate % =
+    AVERAGE ( ComplianceSummary[fraud_rate_pct] )   // per-type; use the column on the table visual
+
+High Risk Types =
+    CALCULATE (
+        DISTINCTCOUNT ( ComplianceSummary[transaction_type] ),
+        ComplianceSummary[risk_classification] = "High"
+    )
+
+Dormant Accounts =
+    CALCULATE ( COUNTROWS ( DormancyReport ), DormancyReport[dormancy_severity] = "Dormant" )
+
+Severely Dormant Accounts =
+    CALCULATE ( COUNTROWS ( DormancyReport ), DormancyReport[dormancy_severity] = "Severely Dormant" )
+
+Total Dormant Accounts =
+    COUNTROWS ( DormancyReport )
+
+// ---- Folder: Accounts (Page 3 - Top 20 flagged) --------------------
+
+Account Flagged Count =
+    CALCULATE ( [Flagged Transactions], ALLEXCEPT ( DimCustomer, DimCustomer[customerId] ) )
+
+Account Flagged Value =
+    CALCULATE ( [Flagged Transaction Value], ALLEXCEPT ( DimCustomer, DimCustomer[customerId] ) )
+
+// Top 20: table visual of DimCustomer[customerId] + [Account Flagged Count] +
+// [Account Flagged Value], visual-level Top-N filter = 20 by [Account Flagged Value].
