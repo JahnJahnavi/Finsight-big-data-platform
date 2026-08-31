@@ -34,6 +34,10 @@ Bigdata Data set file/
 !FinSight_Full_Specification_Complete.pdf
 *.pbix
 *.xlsx
+# Alteryx Designer artifacts - built locally from alteryx/workflows/*.md, never
+# committed (cannot be authored/verified without a Designer install - Phase 12).
+*.yxmd
+*.yxmc
 *.yxmd.bak
 alteryx/inputs/*
 alteryx/outputs/*
