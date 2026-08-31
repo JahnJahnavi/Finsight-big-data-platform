@@ -23,11 +23,11 @@ executive Power BI dashboards.
 | **8** | **Hive data warehouse** — `finsight` db: `transactions` (external), `vw_fraud_transactions`, `txn_summary_mart` (managed), `customer_clv` — see [`docs/phase-08-hive.md`](docs/phase-08-hive.md) | ✅ implemented |
 | **9** | **Spark SQL analytics** — one entry point, 3 modes: compliance / customer summary / dormancy — see [`docs/phase-09-spark-sql.md`](docs/phase-09-spark-sql.md) | ✅ implemented |
 | **10** | **MongoDB customer data** — `finsight.customers` (10k docs), `customerId` join key, compound index, segment validation — see [`docs/phase-10-mongodb.md`](docs/phase-10-mongodb.md) | ✅ implemented |
-| 11 | Neo4j fraud graph loader | ⏳ not started |
-| 12 | Alteryx workflows | ⏳ |
+| **11** | **Neo4j fraud graph** — `(Account)-[:SENT]->(Transaction)-[:RECEIVED_BY]->(Account)`, loader + schema + fraud-ring query — see [`docs/phase-11-neo4j.md`](docs/phase-11-neo4j.md) | ✅ implemented |
+| 12 | Alteryx workflows | ⏳ not started |
 | 13 | Power BI dashboards | ⏳ |
 
-Neo4j, Alteryx and Power BI artifacts are not implemented yet.
+Alteryx and Power BI artifacts are not implemented yet.
 
 ---
 
