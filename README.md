@@ -26,6 +26,7 @@ executive Power BI dashboards.
 | **11** | **Neo4j fraud graph** — `(Account)-[:SENT]->(Transaction)-[:RECEIVED_BY]->(Account)`, loader + schema + fraud-ring query — see [`docs/phase-11-neo4j.md`](docs/phase-11-neo4j.md) | ✅ implemented |
 | **12** | **Alteryx data blending** — Customer Risk Blend + Transaction Summary: full manual build guides, field/formula/join docs, headless fallbacks — see [`docs/alteryx/`](docs/alteryx/) | ✅ documented + headless fallback |
 | **13** | **Power BI dashboard** — 3 pages (Fraud Alert Board · Customer 360 · Risk & Compliance): data model, DAX, per-page specs, dataset export + Kafka bridge — see [`docs/powerbi/`](docs/powerbi/) | ✅ documented + dataset prep |
+| **14** | **End-to-end testing & validation** — `scripts/validate_e2e.py` (21 checkpoints + secrets/large-file/schema/rule/reachability checks) + `scripts/run_e2e_pipeline.sh` driver — see [`docs/testing/`](docs/testing/) | ✅ implemented |
 
 Alteryx Designer and Power BI Desktop are Windows desktop apps. Phases 12–13
 deliver complete manual build instructions, the full data model / DAX / visual
