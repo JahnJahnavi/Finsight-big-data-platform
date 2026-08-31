@@ -24,10 +24,12 @@ executive Power BI dashboards.
 | **9** | **Spark SQL analytics** — one entry point, 3 modes: compliance / customer summary / dormancy — see [`docs/phase-09-spark-sql.md`](docs/phase-09-spark-sql.md) | ✅ implemented |
 | **10** | **MongoDB customer data** — `finsight.customers` (10k docs), `customerId` join key, compound index, segment validation — see [`docs/phase-10-mongodb.md`](docs/phase-10-mongodb.md) | ✅ implemented |
 | **11** | **Neo4j fraud graph** — `(Account)-[:SENT]->(Transaction)-[:RECEIVED_BY]->(Account)`, loader + schema + fraud-ring query — see [`docs/phase-11-neo4j.md`](docs/phase-11-neo4j.md) | ✅ implemented |
-| 12 | Alteryx workflows | ⏳ not started |
-| 13 | Power BI dashboards | ⏳ |
+| **12** | **Alteryx data blending** — Customer Risk Blend + Transaction Summary: full manual build guides, field/formula/join docs, headless fallbacks — see [`docs/alteryx/`](docs/alteryx/) | ✅ documented + headless fallback |
+| 13 | Power BI dashboards | ⏳ not started |
 
-Alteryx and Power BI artifacts are not implemented yet.
+Power BI artifacts are not implemented yet. Alteryx Designer is a desktop app —
+Phase 12 delivers complete manual build instructions plus runnable headless
+equivalents (no `.yxmd` committed); see [`docs/alteryx/README.md`](docs/alteryx/README.md).
 
 ---
 
