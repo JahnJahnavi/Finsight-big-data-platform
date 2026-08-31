@@ -350,6 +350,7 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - ./sql:/opt/finsight/sql
       - ./data:/opt/finsight/data:ro
       - spark-ivy:/opt/spark/.ivy2      # cache for spark-submit --packages
     healthcheck:
@@ -393,6 +394,7 @@ services:
       - ./docker/conf/hadoop/core-site.xml:/opt/spark/conf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/opt/spark/conf/hdfs-site.xml:ro
       - ./spark:/opt/finsight/spark
+      - ./sql:/opt/finsight/sql
       - ./data:/opt/finsight/data:ro
       - spark-ivy:/opt/spark/.ivy2
     depends_on:
