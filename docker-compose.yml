@@ -249,6 +249,11 @@ services:
     environment:
       SERVICE_NAME: "metastore"
       DB_DRIVER: "postgres"
+      # Skip schematool on every start - the Hive 3.1.3 entrypoint runs a bare
+      # `-initSchema` (no "already initialised" detection), which fails on a
+      # recreate once the schema exists in the hive-pg volume. The schema is
+      # created on the volume's first-ever use; wipe hive-pg to re-init.
+      IS_RESUME: "true"
       # The Hive image symlinks every file in HIVE_CUSTOM_CONF_DIR into
       # $HIVE_HOME/conf and points HADOOP_CONF_DIR at it.
       HIVE_CUSTOM_CONF_DIR: "/finsight/hiveconf"
@@ -299,8 +304,10 @@ services:
         -Dhive.metastore.uris=thrift://hive-metastore:9083
     volumes:
       - ./docker/conf/hive/hive-site.xml:/finsight/hiveconf/hive-site.xml:ro
+      - ./docker/conf/hive/tez-site.xml:/finsight/hiveconf/tez-site.xml:ro
       - ./docker/conf/hadoop/core-site.xml:/finsight/hiveconf/core-site.xml:ro
       - ./docker/conf/hadoop/hdfs-site.xml:/finsight/hiveconf/hdfs-site.xml:ro
+      - ./hive:/finsight/hive:ro          # DDL / analyze SQL, run with beeline -f
     depends_on:
       hive-metastore:
         condition: service_healthy

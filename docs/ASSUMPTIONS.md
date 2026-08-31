@@ -45,6 +45,9 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 | **I28** | CLV Recency formula | Spec 7.4: "inverse of the number of steps since the customer's last transaction, normalised … more recent scores higher … 0 if no activity in the last 48 steps" | Linear decay `recency = clamp(1 - steps_since_last / 48, 0, 1)` where `steps_since_last = max_step_overall - customer_last_step`. `0` steps since → `1.0`; `>= 48` → `0.0` (`ASSUMPTIONS.md` G9). | ADOPTED |
 | **I29** | CLV Product Diversity | Spec 7.4: "count of distinct transaction types used … divided by 5" | `countDistinct(type) / 5` over `{PAYMENT, TRANSFER, CASH_IN, DEBIT, CASH_OUT}`. | ADOPTED |
 | **I30** | CLV input path & `clv_scores` columns | Spec 7.4 | Input `/finsight/raw/txn-raw` (I25), overridable. Output required `customerId`, `clv_score`, `clv_classification` **plus** the 4 component scores + raw values + `scored_at`. Parquet, overwrite. **No Hive registration** (spec 7.4 R1) — deferred to the Hive phase. | ADOPTED |
+| **I31** | `finsight.transactions` not Hive-partitioned | Spec 8.1 / 6.3 "partitioned by step" | The Kafka Connect `FieldPartitioner` keeps `step` as a data column in every Parquet file **and** the `step=<N>/` dir name; Hive 3.1.3 NPEs on a partition column that also exists in the file schema. So `step` is a normal column and the sub-dirs are read recursively (`hive.mapred.supports.subdirectories` + `…input.dir.recursive` in `hive-site.xml`). Physical layout is still partitioned-by-step. | ADOPTED |
+| **I32** | `last_balance` in `txn_summary_mart` | Spec 8.2: "newbalanceOrig … from the customer's most recent transaction in that step" | `newbalanceOrig` of the row with the max `(ingest_ts, txnId)` in each `(customerId, step)` group — no finer intra-step ordering exists. | ADOPTED |
+| **I33** | HiveServer2 execution engine | Not specified | Tez in **local mode** via `docker/conf/hive/tez-site.xml` + `hive.exec.scratchdir=file:///…`. `mr` engine is broken in the image (`NoClassDefFound org/apache/hadoop/metrics/Updater`). Also: `hive.query.results.cache.enabled=false` and `hive.compute.query.using.stats=false` (both NPE on Hive 3.1.3), and `IS_RESUME=true` on `hive-metastore` (schematool re-init fails on recreate). | ADOPTED |
 
 ---
 
@@ -52,7 +55,7 @@ Status: `OPEN` = needs owner confirmation · `ADOPTED` = provisionally in effect
 
 | ID | Area | Gap | Planned resolution | Phase |
 |----|------|-----|--------------------|-------|
-| G1 | Hive | DDL for `finsight.transactions` referenced ("below") but absent from the PDF | Derive from the 11-column CSV schema + derived `txnId`, `event_ts`; external table partitioned by `step` | 6 |
+| G1 | Hive | DDL for `finsight.transactions` referenced ("below") but absent from the PDF | RESOLVED Phase 8: `hive/ddl/01_transactions_external.sql` — 13 columns (11 CSV + `txnId` + `ingest_ts`), EXTERNAL Parquet, not Hive-partitioned (I31). | 8 ✓ |
 | G2 | HDFS | Landing directory structure referenced ("below") but absent | RESOLVED in Phase 3: `/finsight/raw/txn-raw/step=<N>/*.parquet` (snappy). See I5b. Full layout in `scripts/init_hdfs.sh`. | 3 ✓ |
 | G13 | Kafka Connect | HDFS sink + Parquet needs a schema; Confluent connector licensing | RESOLVED in Phase 3: `kafka-connect-hdfs3` 1.1.26 (Confluent Community licence), `ParquetFormat` + `JsonConverter schemas.enable=true` fed by the producer's schema envelope (I13). No Schema Registry. | 3 ✓ |
 | G3 | MongoDB | `mongoimport` command referenced but absent | `mongoimport --db finsight --collection customers --file … (--jsonArray if needed)` | 6 |

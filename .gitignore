@@ -92,4 +92,5 @@ kafka/*.out
 
 # --- Phase 3: Kafka Connect -> HDFS ----------------------------------
 # transient Spark read helper written by scripts/validate_phase3.py
-scripts/_p3_read.py
+# transient spark/hive read helpers written by validate_phase*.py
+scripts/_p*.py
