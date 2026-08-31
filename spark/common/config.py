@@ -98,6 +98,17 @@ class Paths:
     daily_summary: str = field(
         default_factory=lambda: _get("HDFS_DAILY_SUMMARY", "/finsight/processed/daily_summary")
     )
+    compliance_summary: str = field(
+        default_factory=lambda: _get("HDFS_COMPLIANCE_SUMMARY",
+                                     "/finsight/processed/compliance_summary")
+    )
+    customer_fraud_summary: str = field(
+        default_factory=lambda: _get("HDFS_CUSTOMER_FRAUD_SUMMARY",
+                                     "/finsight/processed/customer_fraud_summary")
+    )
+    dormancy_report: str = field(
+        default_factory=lambda: _get("HDFS_DORMANCY", "/finsight/processed/dormancy_report")
+    )
     exports: str = field(
         default_factory=lambda: _get("HDFS_EXPORTS", "/finsight/exports")
     )
@@ -213,6 +224,32 @@ class CLVScoring:
 
 
 @dataclass(frozen=True)
+class SparkSQLJobs:
+    """Spec sections 7.5 / 7.6 - Spark SQL over the Hive warehouse."""
+    app_name: str = field(default_factory=lambda: _get("SPARK_APPNAME_SQL",
+                                                       "finsight-spark-sql"))
+    hive_db: str = field(default_factory=lambda: _get("HIVE_DB", "finsight"))
+    txn_table: str = field(default_factory=lambda: _get("SPARK_SQL_TXN_TABLE",
+                                                        "finsight.transactions"))
+    # compliance
+    compliance_window_steps: int = field(
+        default_factory=lambda: _get_int("COMPLIANCE_WINDOW_STEPS", 168))
+    # risk classification of a transaction type by its fraud rate % (spec 7.5
+    # lists the column but not the thresholds - ASSUMPTIONS I34)
+    risk_high_fraud_pct: float = field(
+        default_factory=lambda: _get_float("COMPLIANCE_RISK_HIGH_PCT", 5.0))
+    risk_medium_fraud_pct: float = field(
+        default_factory=lambda: _get_float("COMPLIANCE_RISK_MEDIUM_PCT", 1.0))
+    # dormancy (spec 7.6)
+    dormancy_inactive_steps: int = field(
+        default_factory=lambda: _get_int("DORMANCY_INACTIVE_STEPS", 72))
+    dormancy_severe_steps: int = field(
+        default_factory=lambda: _get_int("DORMANCY_SEVERE_STEPS", 120))
+    dormancy_min_history: int = field(
+        default_factory=lambda: _get_int("DORMANCY_MIN_HISTORY", 5))
+
+
+@dataclass(frozen=True)
 class StreamSettings:
     app_name_fraud: str = field(
         default_factory=lambda: _get("SPARK_APPNAME_FRAUD", "finsight-streaming-fraud")
@@ -237,4 +274,5 @@ FRAUD = FraudRule()
 CHURN = ChurnRule()
 RISK = RiskScoring()
 CLV = CLVScoring()
+SQLJOBS = SparkSQLJobs()
 STREAM = StreamSettings()
