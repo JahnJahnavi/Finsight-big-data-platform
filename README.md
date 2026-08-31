@@ -25,11 +25,14 @@ executive Power BI dashboards.
 | **10** | **MongoDB customer data** — `finsight.customers` (10k docs), `customerId` join key, compound index, segment validation — see [`docs/phase-10-mongodb.md`](docs/phase-10-mongodb.md) | ✅ implemented |
 | **11** | **Neo4j fraud graph** — `(Account)-[:SENT]->(Transaction)-[:RECEIVED_BY]->(Account)`, loader + schema + fraud-ring query — see [`docs/phase-11-neo4j.md`](docs/phase-11-neo4j.md) | ✅ implemented |
 | **12** | **Alteryx data blending** — Customer Risk Blend + Transaction Summary: full manual build guides, field/formula/join docs, headless fallbacks — see [`docs/alteryx/`](docs/alteryx/) | ✅ documented + headless fallback |
-| 13 | Power BI dashboards | ⏳ not started |
+| **13** | **Power BI dashboard** — 3 pages (Fraud Alert Board · Customer 360 · Risk & Compliance): data model, DAX, per-page specs, dataset export + Kafka bridge — see [`docs/powerbi/`](docs/powerbi/) | ✅ documented + dataset prep |
 
-Power BI artifacts are not implemented yet. Alteryx Designer is a desktop app —
-Phase 12 delivers complete manual build instructions plus runnable headless
-equivalents (no `.yxmd` committed); see [`docs/alteryx/README.md`](docs/alteryx/README.md).
+Alteryx Designer and Power BI Desktop are Windows desktop apps. Phases 12–13
+deliver complete manual build instructions, the full data model / DAX / visual
+specs, and runnable headless prep (dataset exports, Kafka→CSV bridge) — no
+`.yxmd` or `.pbix` is committed. See
+[`docs/alteryx/README.md`](docs/alteryx/README.md) and
+[`docs/powerbi/README.md`](docs/powerbi/README.md).
 
 ---
 
